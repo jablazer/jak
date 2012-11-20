@@ -1,6 +1,12 @@
 // jak.cpp
 
-//#include "stdafx.h"
+#ifdef _MSC_VER
+#	include <process.h>
+#	define getpid _getpid
+#else
+#	include <unistd.h>
+#endif
+
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
@@ -13,9 +19,6 @@
 #include <float.h>
 #include <fstream>
 #include "xorshift64.h"
-#include <process.h>
-
-
 
 using namespace std;
 //----------------------------------------------------------------------------//
@@ -25,7 +28,7 @@ struct nodestruct {                                                             
     int parent;
     char label;                                                                //gene
     double time;
-    char type;                                                                 //species
+    int type;                                                                 //species
 };
 //----------------------------------------------------------------------------//
 string convert(int x)					//Function to convert int type to string
@@ -45,10 +48,10 @@ string tree_to_string(const vector<nodestruct>& v) {                            
         if(v[i].child_1 != -1 && v[i].child_2 != -1) {
             string convert_node1=convert(v[i].child_1);
             string convert_node2=convert(v[i].child_2);
-            temp += "(" + node_str[v[i].child_1] + "_" + v[v[i].child_1].type  + "_"+ convert_node1 + ":";
+            temp += "(" + node_str[v[i].child_1] + "_" + convert(v[v[i].child_1].type)  + "_"+ convert_node1 + ":";
             //sprintf(buffer, "%0.6f", v[i].time-v[v[i].child_1].time);
             sprintf(buffer, "%0.6f", v[v[i].child_1].time);
-            temp += string(buffer) + "," + node_str[v[i].child_2] + "_" + v[v[i].child_2].type  + "_" + convert_node2+ ":";
+            temp += string(buffer) + "," + node_str[v[i].child_2] + "_" + convert(v[v[i].child_2].type)  + "_" + convert_node2+ ":";
             //sprintf(buffer, "%0.6f", v[i].time-v[v[i].child_2].time);
             sprintf(buffer, "%0.6f", v[v[i].child_2].time);
             temp += string(buffer) + ")";
@@ -61,7 +64,7 @@ string tree_to_string(const vector<nodestruct>& v) {                            
 //----------------------------------------------------------------------------//
 //REED: use gidpid instead of _getpid for portability to other operating systems.
 //      on windows use _getpid via a define
-#ifdef WIN32
+#ifdef _MSC_VER
 #	define getpid _getpid
 #endif
 inline unsigned int create_random_seed() {															//random seed generator
@@ -76,7 +79,7 @@ inline unsigned int create_random_seed() {															//random seed generator
     v^=(v<<5);
     return (v == 0) ? 0x6a27d958 : (v & 0x7FFFFFFF); // return at most a 31-bit seed
 }
-#ifdef WIN32
+#ifdef _MSC_VER
 #	undef getpid
 #endif
 
@@ -128,10 +131,6 @@ void coaltree(vector<int>& activelist, double theta, double time, int type,
 
 	int size = activelist.size();
 
-	//store copy of activelist, which ones are initial tips
-	//need vector of doubles that save their times
-	//reset all their times to 0
-
 	while(size>1)
 	{
 	    cout << endl;
@@ -164,7 +163,8 @@ void coaltree(vector<int>& activelist, double theta, double time, int type,
 
 		int newparent = nodeVector.size();
 		nodeVector.push_back(nodestruct());
-
+		
+		nodeVector[newparent].type = type;
 
 		nodeVector[newparent].child_1 = activelist[random1];                        //update parent node
 		cout << " nodeVector[newparent].child_1 is : " << nodeVector[newparent].child_1 << endl;
@@ -189,23 +189,7 @@ void coaltree(vector<int>& activelist, double theta, double time, int type,
 		nodeVector[activelist[random2]].time = T - nodeVector[activelist[random2]].time;
 		cout << " after nodeVector[activelist[random2]].time : " << nodeVector[activelist[random2]].time << endl;
 
-		if (type==1)
-		{
-            nodeVector[activelist[random1]].type = '1';
-            nodeVector[activelist[random2]].type = '1';
-		}
-		else if (type==2)
-		{
-            nodeVector[activelist[random1]].type = '2';
-            nodeVector[activelist[random2]].type = '2';
-		}
-		else
-		{
-            nodeVector[activelist[random1]].type = '3';
-            nodeVector[activelist[random2]].type = '3';
-		}
-
-		activelist[random1] = newparent;													 //update active vector
+		activelist[random1] = newparent;												 //update active vector
 		activelist.erase (activelist.begin() + random2);
 		cout << "active list is: " << endl;
 
@@ -298,9 +282,12 @@ int main(int argc, char *argv[])														 //receive inputs
     }
 
     else {
-        cout << "error, must have format: prg name, trees, # of tips for first species, # of tips for second species, theta1, theta2, theta3, t1, t2" << endl;
-//REED: system("PAUSE") does not work outside of windows.  See below for a better solution using cin.ignore
-        system("PAUSE");
+        cout << "error, must have format: prg name, trees, # of tips for first"
+                "species, # of tips for second species, theta1, theta2,"
+                "theta3, t1, t2" << endl;
+		cin.ignore( numeric_limits<streamsize>::max(), '\n' );
+		cout << "Press ENTER to quit.";
+		cin.ignore( numeric_limits<streamsize>::max(), '\n' );
         return EXIT_FAILURE;
     }
 
@@ -330,7 +317,7 @@ int main(int argc, char *argv[])														 //receive inputs
 			nodevector[i].parent=-1;
 			nodevector[i].label='N';
 			nodevector[i].time=0;
-			nodevector[i].type='0';
+			nodevector[i].type=1;
 		}
 
 
@@ -343,7 +330,7 @@ int main(int argc, char *argv[])														 //receive inputs
 			nodevector[j].parent=-1;
 			nodevector[j].label='N';
 			nodevector[j].time=0;
-			nodevector[j].type='0';
+			nodevector[j].type=2;
 		}
 
 		cout << "size of nodevector is: " << nodevector.size() << endl;
@@ -397,12 +384,9 @@ int main(int argc, char *argv[])														 //receive inputs
 
     cout<<"Random seed used: "<<create_random_seed()<<endl;
 
-//REED: Use this instead.
-    /*cin.ignore( numeric_limits<streamsize>::max(), '\n' );
+    cin.ignore( numeric_limits<streamsize>::max(), '\n' );
     cout << "Press ENTER to quit.";
     cin.ignore( numeric_limits<streamsize>::max(), '\n' );
-    */
-    cin.ignore();
 
     return EXIT_SUCCESS;
 }
