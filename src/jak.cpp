@@ -7,6 +7,11 @@
 #	include <unistd.h>
 #endif
 
+#ifndef INT64_C
+#define INT64_C(c) (c ## LL)
+#define UINT64_C(c) (c ## ULL)
+#endif
+
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
@@ -15,6 +20,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <limits>
 #include <math.h>
 #include <float.h>
 #include <fstream>
@@ -28,7 +34,7 @@ struct nodestruct {                                                             
     int parent;
     char label;                                                                //gene
     double time;
-    int type;                                                                 //species
+    char type;                                                                 //species
 };
 //----------------------------------------------------------------------------//
 string convert(int x)					//Function to convert int type to string
@@ -121,7 +127,34 @@ int max_element(vector<int>& activelist)
     return max;
 }
 //-----------------------------------------------------------------------------------------------//
-void coaltree(vector<int>& activelist, double theta, double time, int type,
+
+int key_create(const vector<nodestruct>& temp_nodes){
+
+    union key_union{
+        unsigned int key;
+        unsigned char count[2];
+
+        struct{
+            unsigned char a;
+            unsigned char b;
+            }keystruct;
+    }k;
+
+    k.key = 0;
+    for (int i = 0; i < temp_nodes.size(); ++i){
+        if(temp_nodes[i].type == 'A')
+            k.count[0]++;
+        else if(temp_nodes[i].type == 'B')
+            k.count[1]++;
+    }
+
+    cout << "key:" << k.key << endl;
+
+}
+
+//-------------------------------------------------------------------------------------------------//
+
+void coaltree(vector<int>& activelist, double theta, double time, char type,
 	          vector<nodestruct>& nodeVector, xorshift64& myrand1)
 {
     double T = 0.0;
@@ -133,23 +166,23 @@ void coaltree(vector<int>& activelist, double theta, double time, int type,
 
 	while(size>1)
 	{
-	    cout << endl;
+	   // cout << endl;
 	    for (i=0; i<activelist.size(); i++)
 		{
-		    cout << " " << activelist[i];
+		//    cout << " " << activelist[i];
 		}
-		cout << endl;
+		//cout << endl;
 
         double Z = myrand1.get_double52();
 		double mean = (2.0/(size*(size-1.0)))*(theta/2.0);
 		double U = (-log(Z))*mean;
-		cout << " U is : " << U << endl;
+		//cout << " U is : " << U << endl;
 		if(T+U>time)
 		{
 			break;
 		}
 		T+=U;
-		cout <<"counter Time (T) is: " << T << endl;
+		//cout <<"counter Time (T) is: " << T << endl;
 
 		random1 = (myrand1.get_uint32()% size);
 		do {
@@ -159,57 +192,58 @@ void coaltree(vector<int>& activelist, double theta, double time, int type,
 		if (random1>random2) 															//orders two nodes minimum to maximum
 			swap(random1,random2);
 
-        cout << "coalescing nodes are: " << random1 << " " << random2 << endl;
+        //cout << "coalescing nodes are: " << random1 << " " << random2 << endl;
 
 		int newparent = nodeVector.size();
 		nodeVector.push_back(nodestruct());
-		
+
 		nodeVector[newparent].type = type;
 
 		nodeVector[newparent].child_1 = activelist[random1];                        //update parent node
-		cout << " nodeVector[newparent].child_1 is : " << nodeVector[newparent].child_1 << endl;
+		//cout << " nodeVector[newparent].child_1 is : " << nodeVector[newparent].child_1 << endl;
 
 		nodeVector[newparent].child_2 = activelist[random2];
-		cout << " nodeVector[newparent].child_2 is : " << nodeVector[newparent].child_2 << endl;
+		//cout << " nodeVector[newparent].child_2 is : " << nodeVector[newparent].child_2 << endl;
 
 		nodeVector[newparent].time = T;
-        cout << " nodeVector[newparent].time : " << nodeVector[newparent].time << endl;
+        //cout << " nodeVector[newparent].time : " << nodeVector[newparent].time << endl;
 
 		nodeVector[activelist[random1]].parent = newparent;                                //update child nodes
-		cout << " nodeVector[activelist[random1]].parent : " << nodeVector[activelist[random1]].parent << endl;
+		//cout << " nodeVector[activelist[random1]].parent : " << nodeVector[activelist[random1]].parent << endl;
 
 		nodeVector[activelist[random2]].parent = newparent;
-		cout << " nodeVector[activelist[random2]].parent : " << nodeVector[activelist[random2]].parent << endl;
+		//cout << " nodeVector[activelist[random2]].parent : " << nodeVector[activelist[random2]].parent << endl;
 
-        cout << " before nodeVector[activelist[random1]].time : " << nodeVector[activelist[random1]].time << endl;
+        //cout << " before nodeVector[activelist[random1]].time : " << nodeVector[activelist[random1]].time << endl;
 		nodeVector[activelist[random1]].time = T - nodeVector[activelist[random1]].time;
-		cout << " after nodeVector[activelist[random1]].time : " << nodeVector[activelist[random1]].time << endl;
+		//cout << " after nodeVector[activelist[random1]].time : " << nodeVector[activelist[random1]].time << endl;
 
-        cout << " before nodeVector[activelist[random2]].time : " << nodeVector[activelist[random2]].time << endl;
+        //cout << " before nodeVector[activelist[random2]].time : " << nodeVector[activelist[random2]].time << endl;
 		nodeVector[activelist[random2]].time = T - nodeVector[activelist[random2]].time;
-		cout << " after nodeVector[activelist[random2]].time : " << nodeVector[activelist[random2]].time << endl;
+		//cout << " after nodeVector[activelist[random2]].time : " << nodeVector[activelist[random2]].time << endl;
 
 		activelist[random1] = newparent;												 //update active vector
 		activelist.erase (activelist.begin() + random2);
-		cout << "active list is: " << endl;
+		//cout << "active list is: " << endl;
 
 		for (i=0; i<activelist.size(); i++)
 		{
-		    cout << " " << activelist[i];
+		    //cout << " " << activelist[i];
 		}
-		cout << endl;
-		cout << endl;
+		//cout << endl;
+		//cout << endl;
 		size--;
 	}
 
 	for(int i=0; i<size && time!=DBL_MAX; i++)
 	{
 		nodeVector[activelist[i]].time = nodeVector[activelist[i]].time - time;
-		cout << " nodeVector[activelist[i]].time : " << nodeVector[activelist[i]].time << endl;
+		//cout << " nodeVector[activelist[i]].time : " << nodeVector[activelist[i]].time << endl;
 	}
 
-}
 
+
+}
 //-------------------------------------------------------------------------------------------------//
 
 int main(int argc, char *argv[])														 //receive inputs
@@ -317,7 +351,7 @@ int main(int argc, char *argv[])														 //receive inputs
 			nodevector[i].parent=-1;
 			nodevector[i].label='N';
 			nodevector[i].time=0;
-			nodevector[i].type=1;
+			nodevector[i].type='A';
 		}
 
 
@@ -330,23 +364,23 @@ int main(int argc, char *argv[])														 //receive inputs
 			nodevector[j].parent=-1;
 			nodevector[j].label='N';
 			nodevector[j].time=0;
-			nodevector[j].type=2;
+			nodevector[j].type='B';
 		}
 
-		cout << "size of nodevector is: " << nodevector.size() << endl;
+		//cout << "size of nodevector is: " << nodevector.size() << endl;
 //----------------------------------------------------------------------------//
 
         double t=0.0;
 
         vector<int> nodes(2*n-1); 													//n is number of initial nodes
 
-		coaltree(active1, theta1, t1, 1, nodevector, myrand);
-		coaltree(active2, theta2, t2, 2, nodevector, myrand);
+		coaltree(active1, theta1, t1, 'A', nodevector, myrand);
+		coaltree(active2, theta2, t2, 'B', nodevector, myrand);
 
         active1.insert(active1.end(), active2.begin(), active2.end());
-        coaltree(active1, theta3, DBL_MAX, 3, nodevector, myrand);
+        coaltree(active1, theta3, DBL_MAX, 'C', nodevector, myrand);
 
-
+        key_create(nodevector);
 //----------------------------------------------------------------------------////mutations
         char L1;
         int d  = 0;                                                                     //mutation counters
@@ -370,7 +404,7 @@ int main(int argc, char *argv[])														 //receive inputs
 //----------------------------------------------------------------------------//
 
         cout << "Newick tree: " << repeat+1<< endl;
-        cout << tree_to_string(nodevector) << endl;                                 //print newick tree to console
+        //cout << tree_to_string(nodevector) << endl;                                 //print newick tree to console
         myfile << tree_to_string(nodevector)<< " \n";                               //print newick tree to file
         //int dtotal = d + d1;
         //cout << "Number of mutations: " << dtotal << endl;
