@@ -417,11 +417,9 @@ int main(int argc, char *argv[])														 //receive inputs
 //double tree_height_avg=total_tree/trees;
 
     cout<<"Random seed used: "<<create_random_seed()<<endl;
-
     cin.ignore( numeric_limits<streamsize>::max(), '\n' );
     cout << "Press ENTER to quit.";
     cin.ignore( numeric_limits<streamsize>::max(), '\n' );
-
     return EXIT_SUCCESS;
 }
 
