@@ -126,31 +126,48 @@ int max_element(vector<int>& activelist)
 
     return max;
 }
-//-----------------------------------------------------------------------------------------------//
+//------------------------------------------10-----------------------------------------------------//
 
 int key_create(const vector<nodestruct>& temp_nodes){
 
     union key_union{
-        unsigned int key;
-        unsigned char count[2];
+        uint64_t key;
+        unsigned char count[8];
 
-        struct{
-            unsigned char a;
-            unsigned char b;
-            }keystruct;
     }k;
 
     k.key = 0;
+
     for (int i = 0; i < temp_nodes.size(); ++i){
-        if(temp_nodes[i].type == 'A')
-            k.count[0]++;
-        else if(temp_nodes[i].type == 'B')
-            k.count[1]++;
-    }
+        if(temp_nodes[i].child_1 == -1 && temp_nodes[i].child_2 == -1){                         //ensure node is a tip
+
+            if(temp_nodes[i].type == 'A'){                                                      //if species A
+                if(temp_nodes[i].label=='A')
+                    k.count[0]++;
+                else if(temp_nodes[i].label=='T')
+                    k.count[1]++;
+                else if(temp_nodes[i].label=='C')
+                    k.count[2]++;
+                else if(temp_nodes[i].label=='G')
+                    k.count[3]++;
+            }
+
+            else if(temp_nodes[i].type == 'B'){                                                 //if species B
+                if(temp_nodes[i].label=='A')
+                    k.count[4]++;
+                else if(temp_nodes[i].label=='T')
+                    k.count[5]++;
+                else if(temp_nodes[i].label=='C')
+                    k.count[6]++;
+                else if(temp_nodes[i].label=='G')
+                    k.count[7]++;
+            }
+        }                                                                                       //close "ensure tip" statement
+    }                                                                                           //close for loop
 
     cout << "key:" << k.key << endl;
 
-}
+}                                                                                               //end function
 
 //-------------------------------------------------------------------------------------------------//
 
@@ -380,7 +397,6 @@ int main(int argc, char *argv[])														 //receive inputs
         active1.insert(active1.end(), active2.begin(), active2.end());
         coaltree(active1, theta3, DBL_MAX, 'C', nodevector, myrand);
 
-        key_create(nodevector);
 //----------------------------------------------------------------------------////mutations
         char L1;
         int d  = 0;                                                                     //mutation counters
@@ -399,8 +415,10 @@ int main(int argc, char *argv[])														 //receive inputs
         for (int i=0; i < nodevector.size(); i++){
             char s[] = "ATCG";
             nodevector[i].label = s[nodevector[i].label];
-        }
-                                                                                   //end mutations for loop
+        }                                                                       //end mutations for loop
+
+        key_create(nodevector);
+
 //----------------------------------------------------------------------------//
 
         cout << "Newick tree: " << repeat+1<< endl;
@@ -417,9 +435,11 @@ int main(int argc, char *argv[])														 //receive inputs
 //double tree_height_avg=total_tree/trees;
 
     cout<<"Random seed used: "<<create_random_seed()<<endl;
+
     cin.ignore( numeric_limits<streamsize>::max(), '\n' );
     cout << "Press ENTER to quit.";
     cin.ignore( numeric_limits<streamsize>::max(), '\n' );
+
     return EXIT_SUCCESS;
 }
 
